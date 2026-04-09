@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-vc = cv2.VideoCapture(0)
+vc = cv2.VideoCapture(1)
 
 while cv2.waitKey(1) < 0:
     ret, frame = vc.read()
