@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armobot Control - Admin Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            background-color: #0f2027;
+            overscroll-behavior: none;
+            font-size: 80%;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            background-attachment: fixed;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        .banner {
+            width: 100%;
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .banner-text {
+            background: linear-gradient(to bottom, rgba(15, 32, 39, 0.95), rgba(15, 32, 39, 1));
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 2px solid rgba(0, 217, 255, 0.3);
+            position: relative;
+        }
+
+        .banner-title {
+            font-size: 1.6em;
+            color: #00d9ff;
+            text-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .banner-subtitle {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 20px;
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid #ff4757;
+            color: #ff4757;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.95em;
+            z-index: 20;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #ff4757;
+            color: #fff;
+        }
+
+        .btn-dashboard {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 20px;
+            background: rgba(0, 217, 255, 0.2);
+            border: 1px solid #00d9ff;
+            color: #00d9ff;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.95em;
+            z-index: 20;
+            transition: all 0.2s;
+        }
+
+        .btn-dashboard:hover {
+            background: #00d9ff;
+            color: #0f2027;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(0, 217, 255, 0.25);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+            padding-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            color: #00d9ff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        .btn-pri {
+            background: #00d9ff;
+            color: #0f2027;
+        }
+
+        .btn-pri:hover {
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+
+        .btn-suc {
+            background: #00ff7f;
+            color: #0f2027;
+        }
+
+        .btn-suc:hover {
+            box-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
+        .btn-warn {
+            background: #ffa500;
+            color: #fff;
+        }
+
+        .btn-warn:hover {
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+        }
+
+        .btn-dng {
+            background: #ff4757;
+            color: #fff;
+        }
+
+        .btn-dng:hover {
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 15px 20px;
+            text-align: left;
+        }
+
+        th {
+            color: #00d9ff;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 1.05em;
+            text-transform: uppercase;
+        }
+
+        td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
+            border: 1px solid rgba(0, 217, 255, 0.5);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .close-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #ff4757;
+        }
+
+        .modal-title {
+            font-size: 1.6em;
+            color: #00d9ff;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+            padding-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.05em;
+            letter-spacing: 0.5px;
+        }
+
+        .txt-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px 15px;
+            color: #fff;
+            font-size: 1.05em;
+            transition: all 0.3s;
+        }
+
+        .txt-input:focus {
+            outline: none;
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.12);
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: #00d9ff;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            color: #0f2027;
+            font-weight: 700;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.96);
+        }
+
+        .alert {
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 1.05em;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 127, 0.15);
+            border: 1px solid #00ff7f;
+            color: #00ff7f;
+        }
+
+        .alert-error {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid #ff4757;
+            color: #ff4757;
+        }
+
+        @media (max-width: 768px) {
+            .banner-title {
+                font-size: 1.4em;
+            }
+
+            th,
+            td {
+                padding: 10px;
+            }
+
+            .btn-dashboard {
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+
+            .btn-logout {
+                padding: 6px 12px;
+                font-size: 0.85em;
+                right: 10px;
+            }
+
+            .btn-dashboard {
+                left: 10px;
+            }
+
+            .action-cell {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="banner">
+        <a href="/" class="btn-dashboard">Control Panel</a>
+        <a href="/logout" class="btn-logout">Logout</a>
+        <div class="banner-text">
+            <h1 class="banner-title">🛡️ ADMIN PORTAL</h1>
+            <p class="banner-subtitle">Armobot User Management System</p>
+        </div>
+    </div>
+
+    <div class="container">
+        {% set msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+        {% for category, message in msgs %}
+        <div class="alert {{ 'alert-error' if category == 'error' else 'alert-success' }}" style="display: block;">
+            {{ "⚠️" if category == "error" else "✅" }} {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">👥 Registered Users</span>
+                <button class="btn-suc" onclick="openModal('addModal')" style="padding: 10px 20px; font-size: 1.05em;">+
+                    Add New User</button>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.id }}</td>
+                            <td style="font-weight: 600;">{{ u.username }}</td>
+                            <td style="color: rgba(255,255,255,0.7);">{{ u.created_at }}</td>
+                            <td class="action-cell">
+                                {% if u.username != 'admin' %}
+                                <button class="btn-warn" onclick="openEditModal({{ u.id }}, '{{ u.username }}')">✏️
+                                    Edit</button>
+                                <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST"
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Are you sure you want to delete user {{ u.username }}?');">
+                                    <button type="submit" class="btn-dng">🗑️ Delete</button>
+                                </form>
+                                {% else %}
+                                <span
+                                    style="color:rgba(255,255,255,0.4); font-style:italic; padding: 8px 0; display: inline-block;">System
+                                    Administrator</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: rgba(255,255,255,0.5); padding: 30px;">No
+                                users found in database.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('addModal')">&times;</span>
+            <h2 class="modal-title">Create Target User</h2>
+            <form action="{{ url_for('add_user') }}" method="POST" autocomplete="off">
+                <div class="input-group">
+                    <label>USERNAME</label>
+                    <input type="text" name="username" class="txt-input" placeholder="Enter Username" required
+                        autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>PASSWORD</label>
+                    <input type="password" name="password" class="txt-input" placeholder="Enter Password" required
+                        autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-submit">Add User</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('editModal')">&times;</span>
+            <h2 class="modal-title">Update Identity Info</h2>
+            <form id="editForm" method="POST" autocomplete="off">
+                <div class="input-group">
+                    <label>USERNAME</label>
+                    <input type="text" id="edit-username" name="username" class="txt-input" required>
+                </div>
+                <div class="input-group">
+                    <label>NEW PASSWORD (OPTIONAL)</label>
+                    <input type="password" name="password" class="txt-input"
+                        placeholder="Leave blank to keep current password">
+                </div>
+                <button type="submit" class="btn-submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('show');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('show');
+        }
+
+        function openEditModal(id, username) {
+            document.getElementById('edit-username').value = username;
+            document.getElementById('editForm').action = '/admin/update_user/' + id;
+            openModal('editModal');
+        }
+
+        // Close modal if clicked outside
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+            }
+        }
+    </script>
+
+</body>
+
+</html>
