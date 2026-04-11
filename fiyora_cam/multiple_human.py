@@ -13,7 +13,6 @@ RTSP_URLS = [
 ]
 PICO_IP = "192.168.0.205"
 
-
 triggered = False
 last_seen = 0
 trigger_time = 0
@@ -22,9 +21,9 @@ buzzer_on = False
 STOP_DELAY = 5.0
 BUZZER_DELAY = 5.0
 
-
 # Shared frames
 frames = [np.zeros((270, 480, 3), dtype=np.uint8) for _ in RTSP_URLS]
+
 
 def human_detection(frame):
     global last_seen, buzzer_on, trigger_time, triggered
@@ -43,15 +42,42 @@ def human_detection(frame):
     for cnt in contours:
         area = cv2.contourArea(cnt)
 
+        # 1. Ignore very small areas (noise)
         if area < 2000:
+            continue
+
+        # 2. Check Solidity (Area / Convex Hull Area)
+        # A solid object (like a box) has high solidity, unlike jagged grass patches.
+        hull = cv2.convexHull(cnt)
+        hull_area = cv2.contourArea(hull)
+
+        # Avoid division by zero
+        if hull_area == 0:
+            continue
+
+        solidity = float(area) / hull_area
+
+        # Require the shape to be at least 80% solid
+        if solidity < 0.8:
             continue
 
         x, y, w, h = cv2.boundingRect(cnt)
         aspect_ratio = w / float(h)
 
-        if 0.3 < aspect_ratio < 3.0:
-            detected = True
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        # 3. Check Extent (Area / Bounding Box Area)
+        extent = float(area) / (w * h)
+
+        # 4. Apply combined aspect ratio and extent filters
+        if 0.3 < aspect_ratio < 3.0 and extent > 0.5:
+
+            # 5. Polygon Approximation
+            # Simplify the geometry to count corners. A box should have ~4-6 corners depending on perspective.
+            epsilon = 0.04 * cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, epsilon, True)
+
+            if 4 <= len(approx) <= 6:
+                detected = True
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     # ---- TRIGGER ----
     current_time = time.time()
@@ -60,7 +86,7 @@ def human_detection(frame):
         last_seen = current_time
 
         if not triggered:
-            print("TRIGGER")
+            print("TRIGGER - HUMAN DETECTED")
             triggered = True
 
         if not buzzer_on:
@@ -81,7 +107,6 @@ def human_detection(frame):
                     buzzer_on = False
                 except:
                     print("Pico not reachable")
-
 
 
 class CameraThread:
@@ -106,12 +131,11 @@ class CameraThread:
         self.running = False
         self.cap.release()
 
+
 # Start all camera threads
 cams = [CameraThread(url, i) for i, url in enumerate(RTSP_URLS)]
 
 while True:
-    # start_time = time.time()
-
     current_frames = frames.copy()
     n = len(current_frames)
 
@@ -120,25 +144,27 @@ while True:
 
     # Fill empty
     while len(current_frames) < rows * cols:
-        current_frames.append(np.zeros((540, 720, 3), dtype=np.uint8))
+        current_frames.append(np.zeros((270, 480, 3), dtype=np.uint8))
+        # current_frames.append(np.zeros((540, 720, 3), dtype=np.uint8))
+
 
     # Build grid
     grid_rows = []
     for i in range(rows):
-        row = np.hstack(current_frames[i*cols:(i+1)*cols])
+        row = np.hstack(current_frames[i * cols:(i + 1) * cols])
         grid_rows.append(row)
 
     grid = np.vstack(grid_rows)
 
-    # Optional: force 1920x1080
+    # Optional: force rendering size
     grid = cv2.resize(grid, (1200, 700))
 
-    # print("Loop time:", time.time() - start_time)
+    # Run the detection on the grid
     human_detection(grid)
 
     cv2.imshow("Multi-thread Grid", grid)
 
-    if cv2.waitKey(1) == 27:
+    if cv2.waitKey(1) == 27:  # Press ESC to exit
         break
 
 # Stop threads
