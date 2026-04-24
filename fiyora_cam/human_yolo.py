@@ -3,27 +3,26 @@ import numpy as np
 import threading
 import time
 import requests
+import os
+import math
 from ultralytics import YOLO
 
-# ---------------- CONFIG ----------------
+
 RTSP_URLS = [
-    "rtsp://admin:123456@192.168.0.100:554/ch01.264",
-    "rtsp://admin:123456@192.168.0.101:554/ch01.264",
-    "rtsp://admin:123456@192.168.0.103:554/ch01.264",
+    "rtsp://192.168.144.108:554/stream=2",              # Cam 1
+    "rtsp://admin:123456@192.168.144.100:554/ch01.264", # Cam 2
+    "rtsp://admin:123456@192.168.144.101:554/ch01.264", # Cam 3
+    "rtsp://admin:123456@192.168.144.103:554/ch01.264", # Cam 4
 ]
 
-PICO_IP = "192.168.0.205"
+PICO_IP = "192.168.144.205"
 STOP_DELAY = 2.0
 
 # ---------------- GLOBALS ----------------
-frames = [np.zeros((270, 480, 3), dtype=np.uint8) for _ in RTSP_URLS]
-detections = [[] for _ in RTSP_URLS]
-
-buzzer_on = False
+cam_data = [{"frame": None, "detections": []} for _ in RTSP_URLS]
 last_seen = 0
 last_api_call = 0
 
-# ---------------- YOLO ----------------
 model = YOLO("yolov8n.pt")
 
 # ---------------- CAMERA THREAD ----------------
@@ -34,107 +33,105 @@ class CameraThread:
         self.cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.running = True
-
         threading.Thread(target=self.update, daemon=True).start()
 
     def update(self):
-        global frames
         while self.running:
             ret, frame = self.cap.read()
-
-            if not ret:
-                print(f"Reconnecting Camera {self.index}")
+            if not ret or frame is None:
                 self.cap.release()
                 time.sleep(1)
                 self.cap = cv2.VideoCapture(self.url, cv2.CAP_FFMPEG)
                 continue
 
-            frames[self.index] = cv2.resize(frame, (480, 270))
+            cam_data[self.index]["frame"] = cv2.resize(frame, (480, 270))
 
     def stop(self):
         self.running = False
         self.cap.release()
 
-# ---------------- YOLO THREAD ----------------
+# ---------------- DETECTION LOOP ----------------
 def detection_loop():
-    global detections, last_seen, buzzer_on, last_api_call
+    global last_seen, last_api_call
 
     while True:
-        for i, frame in enumerate(frames):
+        any_human_found = False
 
-            results = model(frame, verbose=False)[0]
+        for i in range(len(RTSP_URLS)):
+            if i == 0:
+                cam_data[i]["detections"] = []
+                continue
 
-            boxes = []
-            detected = False
+            data = cam_data[i]
+            if data["frame"] is not None:
+                # Detect only humans (class 0)
+                results = model.predict(data["frame"], conf=0.4, classes=[0], verbose=False)[0]
 
-            for box in results.boxes:
-                if int(box.cls[0]) == 0:  # person
+                boxes = []
+                for box in results.boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     boxes.append((x1, y1, x2, y2))
-                    detected = True
+                    any_human_found = True
 
-            detections[i] = boxes
+                cam_data[i]["detections"] = boxes
 
-            current_time = time.time()
+        # Pico Control Logic
+        current_time = time.time()
+        if any_human_found:
+            last_seen = current_time
+            if current_time - last_api_call > 0.8:
+                try:
+                    requests.get(f"http://{PICO_IP}/on", timeout=0.3)
+                    last_api_call = current_time
+                except:
+                    pass
+        else:
+            if (current_time - last_seen > STOP_DELAY):
+                try:
+                    requests.get(f"http://{PICO_IP}/off", timeout=0.3)
+                except:
+                    pass
 
-            # -------- DETECTED --------
-            if detected:
-                last_seen = current_time
-
-                # 🔥 Try ON every 2 sec (handles manual OFF)
-                if current_time - last_api_call > 0.5:
-                    print("HUMAN DETECTED")
-
-                    try:
-                        requests.get(f"http://{PICO_IP}/on", timeout=2)
-                        last_api_call = current_time
-                        buzzer_on = True  # 🔥 ADD THIS BACK
-                    except:
-                        print("Pico not reachable")
-
-            # -------- NOT DETECTED --------
-            else:
-                if (current_time - last_seen > STOP_DELAY):
-                    print("NO HUMAN → OFF")
-
-                    try:
-                        requests.get(f"http://{PICO_IP}/off", timeout=2)
-                        buzzer_on = False
-                    except:
-                        print("Pico not reachable")
-
-        time.sleep(0.2)  # reduce lag
+        time.sleep(0.01)
 
 # ---------------- START ----------------
 cams = [CameraThread(url, i) for i, url in enumerate(RTSP_URLS)]
-
 threading.Thread(target=detection_loop, daemon=True).start()
 
 # ---------------- DISPLAY ----------------
 while True:
-    current_frames = frames.copy()
+    display_frames = []
 
-    for i, frame in enumerate(current_frames):
-        # Draw boxes
-        for (x1, y1, x2, y2) in detections[i]:
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, "Human", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    for i in range(len(RTSP_URLS)):
+        data = cam_data[i]
+        # Copy the frame for display or use black if not loaded
+        f = data["frame"].copy() if data["frame"] is not None else np.zeros((270, 480, 3), dtype=np.uint8)
 
-        # Camera label
-        cv2.putText(frame, f"Cam {i+1}", (10, 25),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        # Draw boxes (will be empty for Cam 1)
+        for (x1, y1, x2, y2) in data["detections"]:
+            cv2.rectangle(f, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(f, "Human", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    grid = np.hstack(current_frames)
-    grid = cv2.resize(grid, (1200, 400))
+        # Labels
+        label = f"Cam {i + 1}"
+        if i == 0: label += " (Live Only)"
+        cv2.putText(f, label, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        display_frames.append(f)
 
-    cv2.imshow("YOLO Multi Camera", grid)
+    # Grid Assembly
+    n = len(display_frames)
+    cols = math.ceil(math.sqrt(n))
+    rows = math.ceil(n / cols)
+    while len(display_frames) < rows * cols:
+        display_frames.append(np.zeros((270, 480, 3), dtype=np.uint8))
 
-    if cv2.waitKey(1) == 27:
-        break
+    grid_rows = []
+    for i in range(rows):
+        row = np.hstack(display_frames[i * cols:(i + 1) * cols])
+        grid_rows.append(row)
 
-# ---------------- CLEANUP ----------------
-for cam in cams:
-    cam.stop()
+    cv2.imshow("Multi-Cam Human Watch", np.vstack(grid_rows))
+    if cv2.waitKey(1) == 27: break
 
+for cam in cams: cam.stop()
 cv2.destroyAllWindows()
