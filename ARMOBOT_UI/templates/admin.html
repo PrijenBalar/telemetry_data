@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armobot Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            background-color: #0f2027;
+            overscroll-behavior: none;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            background-attachment: fixed;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP HEADER BANNER ===== */
+        .header {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+            padding: 14px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .header-brand .brand-icon {
+            font-size: 1.8em;
+            filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.6));
+        }
+
+        .header-brand .brand-name {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: #00d9ff;
+            text-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .header-brand .brand-sub {
+            font-size: 0.7em;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+            letter-spacing: 0;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.6);
+            background: transparent;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-btn:hover {
+            color: #fff;
+            background: rgba(0, 217, 255, 0.1);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.25), rgba(0, 217, 255, 0.1));
+            color: #00d9ff;
+            border: 1px solid rgba(0, 217, 255, 0.4);
+            box-shadow: 0 0 12px rgba(0, 217, 255, 0.15);
+        }
+
+        .nav-btn.logout-btn {
+            color: rgba(255, 71, 87, 0.8);
+            margin-left: 6px;
+        }
+
+        .nav-btn.logout-btn:hover {
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.12);
+        }
+
+        #nav-panel:hover {
+            color: #00ff7f;
+            background: rgba(0, 255, 127, 0.1);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 35px 20px;
+        }
+
+        /* ===== FLASH MESSAGES ===== */
+        .flash {
+            padding: 14px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .flash-success {
+            background: rgba(0, 255, 127, 0.12);
+            border: 1px solid rgba(0, 255, 127, 0.4);
+            color: #00ff7f;
+        }
+
+        .flash-error {
+            background: rgba(255, 71, 87, 0.12);
+            border: 1px solid rgba(255, 71, 87, 0.4);
+            color: #ff4757;
+        }
+
+        /* ===== TAB SECTIONS ===== */
+        .tab-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== SECTION HEADING ===== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .section-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.05));
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            flex-shrink: 0;
+        }
+
+        .section-info h2 {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #00d9ff;
+            letter-spacing: 0.5px;
+        }
+
+        .section-info p {
+            font-size: 0.88em;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 3px;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(0, 217, 255, 0.18);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+        }
+
+        /* ===== USERS TABLE ===== */
+        .user-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.85em;
+            color: #00d9ff;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #fff;
+        }
+
+        th,
+        td {
+            padding: 14px 18px;
+            text-align: left;
+        }
+
+        thead tr {
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+        }
+
+        th {
+            color: #00d9ff;
+            font-weight: 600;
+            font-size: 0.82em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.2s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .badge-id {
+            display: inline-block;
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid rgba(0, 217, 255, 0.25);
+            color: #00d9ff;
+            border-radius: 6px;
+            padding: 2px 10px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .username-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d9ff, #0077aa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            color: #0f2027;
+            flex-shrink: 0;
+        }
+
+        .date-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.88em;
+        }
+
+        .empty-row td {
+            text-align: center;
+            padding: 50px;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 1em;
+        }
+
+        /* ===== FORM ===== */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.82em;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .txt-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(0, 217, 255, 0.25);
+            border-radius: 10px;
+            padding: 13px 16px;
+            color: #fff;
+            font-size: 0.97em;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.25s;
+        }
+
+        .txt-input:focus {
+            outline: none;
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.12);
+        }
+
+        .txt-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-note {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+        }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #00d9ff, #0099cc);
+            border: none;
+            border-radius: 10px;
+            color: #0f2027;
+            font-weight: 700;
+            font-size: 1em;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== UPDATE SECTION ===== */
+        .user-select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .user-select-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(0, 217, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            gap: 12px;
+        }
+
+        .user-select-item:hover {
+            background: rgba(0, 217, 255, 0.07);
+            border-color: rgba(0, 217, 255, 0.35);
+        }
+
+        .user-select-item.selected {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: #00d9ff;
+            box-shadow: 0 0 12px rgba(0, 217, 255, 0.15);
+        }
+
+        .user-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-name-label {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .user-id-badge {
+            font-size: 0.78em;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-edit,
+        .btn-del {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: rgba(255, 165, 0, 0.15);
+            border: 1px solid rgba(255, 165, 0, 0.4);
+            color: #ffa500;
+        }
+
+        .btn-edit:hover {
+            background: rgba(255, 165, 0, 0.25);
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+        }
+
+        .btn-del {
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid rgba(255, 71, 87, 0.4);
+            color: #ff4757;
+        }
+
+        .btn-del:hover {
+            background: rgba(255, 71, 87, 0.25);
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+        }
+
+        /* ===== EDIT INLINE FORM ===== */
+        .edit-panel {
+            display: none;
+            background: rgba(0, 217, 255, 0.04);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 14px;
+            padding: 24px;
+            margin-top: 20px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .edit-panel.visible {
+            display: block;
+        }
+
+        .edit-panel-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: #00d9ff;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .no-users-msg {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            padding: 40px 20px;
+            font-size: 0.95em;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                padding: 12px 16px;
+                gap: 12px;
+            }
+
+            .navbar {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-btn {
+                padding: 8px 14px;
+                font-size: 0.88em;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-btns {
+                flex-direction: column;
+            }
+
+            .main {
+                padding: 20px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-select-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-brand">
+            <span class="brand-icon">🛡️</span>
+            <div>
+                <div class="brand-name">ADMIN PORTAL</div>
+                <div class="brand-sub">Armobot User Management</div>
+            </div>
+        </div>
+
+        <nav class="navbar" role="navigation" aria-label="Admin navigation">
+            <a href="/" class="nav-btn" id="nav-panel" aria-label="Control Panel" style="color:rgba(0,255,127,0.85);">
+                🤖 Control Panel
+            </a>
+            <button class="nav-btn {% if active_tab == 'users' %}active{% endif %}" id="nav-users"
+                onclick="switchTab('users')" aria-label="Users section">
+                👥 Users
+            </button>
+            <button class="nav-btn {% if active_tab == 'register' %}active{% endif %}" id="nav-register"
+                onclick="switchTab('register')" aria-label="Register section">
+                ➕ Register
+            </button>
+            <button class="nav-btn {% if active_tab == 'update' %}active{% endif %}" id="nav-update"
+                onclick="switchTab('update')" aria-label="Update section">
+                ✏️ Update
+            </button>
+            <a href="/logout" class="nav-btn logout-btn" aria-label="Logout">
+                🚪 Logout
+            </a>
+        </nav>
+    </header>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+
+        <!-- Flash messages -->
+        {% set msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+        {% for category, message in msgs %}
+        <div class="flash {{ 'flash-success' if category != 'error' else 'flash-error' }}">
+            {{ "✅" if category != "error" else "⚠️" }} {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ===== USERS TAB ===== -->
+        <section id="tab-users" class="tab-section {% if active_tab == 'users' %}active{% endif %}">
+            <div class="section-header">
+                <div class="section-icon">👥</div>
+                <div class="section-info">
+                    <h2>All Users</h2>
+                    <p>View all registered users (admin accounts are not shown here)</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="user-count">
+                    <span>●</span> {{ users | length }} user{{ 's' if users | length != 1 else '' }} registered
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Company</th>
+                                <th>Address</th>
+                                <th>City</th>
+                                <th>Country</th>
+                                <th>Registered On</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td><span class="badge-id">#{{ u.id }}</span></td>
+                                <td>
+                                    <div class="username-cell">
+                                        <div class="avatar">{{ u.username[0].upper() }}</div>
+                                        {{ u.username }}
+                                    </div>
+                                </td>
+                                <td class="date-text">{{ u.company or '—' }}</td>
+                                <td class="date-text">{{ u.address or '—' }}</td>
+                                <td class="date-text">{{ u.city or '—' }}</td>
+                                <td class="date-text">{{ u.country or '—' }}</td>
+                                <td class="date-text">{{ u.created_at }}</td>
+                            </tr>
+                            {% else %}
+                            <tr class="empty-row">
+                                <td colspan="7">🔍 No users found. Add one from the Register tab.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== REGISTER TAB ===== -->
+        <section id="tab-register" class="tab-section {% if active_tab == 'register' %}active{% endif %}">
+            <div class="section-header">
+                <div class="section-icon">➕</div>
+                <div class="section-info">
+                    <h2>Register New User</h2>
+                    <p>Create a new user account for the Armobot control panel</p>
+                </div>
+            </div>
+
+            <div class="card" style="max-width: 800px;">
+                <form action="{{ url_for('add_user') }}" method="POST" autocomplete="off" id="register-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="reg-username">Username</label>
+                            <input type="text" id="reg-username" name="username" class="txt-input"
+                                placeholder="e.g. john_doe" required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-password">Password</label>
+                            <input type="password" id="reg-password" name="password" class="txt-input"
+                                placeholder="Set a strong password" required autocomplete="new-password">
+                        </div>
+                        <div class="form-group full">
+                            <label for="reg-company">Company Name</label>
+                            <input type="text" id="reg-company" name="company" class="txt-input"
+                                placeholder="e.g. Armobot Industries" autocomplete="off">
+                        </div>
+                        <div class="form-group full">
+                            <label for="reg-address">Address</label>
+                            <input type="text" id="reg-address" name="address" class="txt-input"
+                                placeholder="Street / Building" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-city">City</label>
+                            <input type="text" id="reg-city" name="city" class="txt-input" placeholder="e.g. Ahmedabad"
+                                autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-country">Country</label>
+                            <input type="text" id="reg-country" name="country" class="txt-input"
+                                placeholder="e.g. India" autocomplete="off">
+                        </div>
+                        <div class="form-group full">
+                            <button type="submit" class="btn-submit" id="btn-register">
+                                ➕ Create User Account
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== UPDATE TAB ===== -->
+        <section id="tab-update" class="tab-section {% if active_tab == 'update' %}active{% endif %}">
+            <div class="section-header">
+                <div class="section-icon">✏️</div>
+                <div class="section-info">
+                    <h2>Update / Delete User</h2>
+                    <p>Modify credentials or remove users from the system</p>
+                </div>
+            </div>
+
+            <div class="card">
+                {% if users %}
+                <div class="user-select-list" id="user-list">
+                    {% for u in users %}
+                    <div class="user-select-item" id="user-item-{{ u.id }}">
+                        <div class="user-left">
+                            <div class="avatar">{{ u.username[0].upper() }}</div>
+                            <div>
+                                <div class="user-name-label">{{ u.username }}</div>
+                                <div class="user-id-badge">ID #{{ u.id }} &middot; {{ u.company or '' }}{% if u.company
+                                    and u.city %} · {% endif %}{{ u.city or '' }}{% if u.city and u.country %}, {% endif
+                                    %}{{ u.country or '' }}</div>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-edit"
+                                onclick="openEditPanel({{ u.id }}, '{{ u.username }}', '{{ u.company or '' }}', '{{ u.address or '' }}', '{{ u.city or '' }}', '{{ u.country or '' }}')">
+                                ✏️ Edit
+                            </button>
+                            <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST"
+                                style="display:inline;"
+                                onsubmit="return confirm('Delete user \'{{ u.username }}\'? This cannot be undone.');">
+                                <button type="submit" class="btn-del">🗑️ Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Inline edit panel -->
+                <div class="edit-panel" id="edit-panel">
+                    <div class="edit-panel-title">✏️ Editing: <span id="edit-target-name"></span></div>
+                    <form id="edit-form" method="POST" autocomplete="off">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="edit-username">Username</label>
+                                <input type="text" id="edit-username" name="username" class="txt-input" required
+                                    autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-password">New Password</label>
+                                <input type="password" id="edit-password" name="password" class="txt-input"
+                                    placeholder="Leave blank to keep current" autocomplete="new-password">
+                                <span class="form-note">Leave blank to keep existing password</span>
+                            </div>
+                            <div class="form-group full">
+                                <label for="edit-company">Company Name</label>
+                                <input type="text" id="edit-company" name="company" class="txt-input"
+                                    placeholder="Company name" autocomplete="off">
+                            </div>
+                            <div class="form-group full">
+                                <label for="edit-address">Address</label>
+                                <input type="text" id="edit-address" name="address" class="txt-input"
+                                    placeholder="Street / Building" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-city">City</label>
+                                <input type="text" id="edit-city" name="city" class="txt-input" placeholder="City"
+                                    autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-country">Country</label>
+                                <input type="text" id="edit-country" name="country" class="txt-input"
+                                    placeholder="Country" autocomplete="off">
+                            </div>
+                            <div class="form-group full" style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button type="submit" class="btn-submit" id="btn-save-edit"
+                                    style="flex:1; min-width:160px;">
+                                    💾 Save Changes
+                                </button>
+                                <button type="button" onclick="closeEditPanel()" style="flex:1; min-width:120px; padding:14px 24px; border-radius:10px;
+                                               border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.06);
+                                               color:rgba(255,255,255,0.7); font-family:Inter,sans-serif;
+                                               font-size:1em; font-weight:600; cursor:pointer; transition:all 0.2s;
+                                               text-transform:uppercase; letter-spacing:0.5px; margin-top:10px;">
+                                    ✕ Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {% else %}
+                <div class="no-users-msg">
+                    🔍 No users to manage. Register a user first.
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // ===== TAB SWITCHING =====
+        const TABS = ['users', 'register', 'update'];
+
+        function switchTab(tabName) {
+            TABS.forEach(t => {
+                const section = document.getElementById('tab-' + t);
+                const btn = document.getElementById('nav-' + t);
+                if (section) section.classList.toggle('active', t === tabName);
+                if (btn) btn.classList.toggle('active', t === tabName);
+            });
+            // Update URL without reload
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+        }
+
+        // ===== EDIT PANEL =====
+        function openEditPanel(id, username, company, address, city, country) {
+            document.getElementById('edit-target-name').textContent = username;
+            document.getElementById('edit-username').value = username;
+            document.getElementById('edit-password').value = '';
+            document.getElementById('edit-company').value = company || '';
+            document.getElementById('edit-address').value = address || '';
+            document.getElementById('edit-city').value = city || '';
+            document.getElementById('edit-country').value = country || '';
+            document.getElementById('edit-form').action = '/admin/update_user/' + id;
+
+            // Highlight selected user row
+            document.querySelectorAll('.user-select-item').forEach(el => el.classList.remove('selected'));
+            const item = document.getElementById('user-item-' + id);
+            if (item) {
+                item.classList.add('selected');
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            const panel = document.getElementById('edit-panel');
+            panel.classList.add('visible');
+            setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        }
+
+        function closeEditPanel() {
+            document.getElementById('edit-panel').classList.remove('visible');
+            document.querySelectorAll('.user-select-item').forEach(el => el.classList.remove('selected'));
+        }
+
+        // Auto-dismiss flash messages after 5s
+        document.querySelectorAll('.flash').forEach(el => {
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }, 5000);
+        });
+    </script>
+
+</body>
+
+</html>

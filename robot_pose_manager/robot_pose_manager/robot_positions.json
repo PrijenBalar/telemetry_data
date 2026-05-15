@@ -1,0 +1,116 @@
+{
+  "positions": {
+    "1": {
+      "joints": {
+        "joint1": 0,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "2": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "open"
+    },
+    "3": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 0,
+        "joint3": -20
+      },
+      "gripper": "open"
+    },
+    "4": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 50,
+        "joint3": -20
+      },
+      "gripper": "open"
+    },
+    "5": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 50,
+        "joint3": -20
+      },
+      "gripper": "close"
+    },
+    "6": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 0,
+        "joint3": -20
+      },
+      "gripper": "close"
+    },
+    "7": {
+      "joints": {
+        "joint1": -50,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "8": {
+      "joints": {
+        "joint1": 0,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "9": {
+      "joints": {
+        "joint1": 40,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "10": {
+      "joints": {
+        "joint1": 40,
+        "joint2": 30,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "11": {
+      "joints": {
+        "joint1": 40,
+        "joint2": 30,
+        "joint3": -30
+      },
+      "gripper": "open"
+    },
+    "12": {
+      "joints": {
+        "joint1": 40,
+        "joint2": 0,
+        "joint3": -30
+      },
+      "gripper": "close"
+    },
+    "13": {
+      "joints": {
+        "joint1": 40,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    },
+    "14": {
+      "joints": {
+        "joint1": 0,
+        "joint2": 0,
+        "joint3": 0
+      },
+      "gripper": "close"
+    }
+  }
+}

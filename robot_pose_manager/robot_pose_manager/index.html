@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Position Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0d0f12;color:#e8eaed;min-height:100vh;padding:1.25rem}
+h1{font-size:17px;font-weight:500;margin-bottom:1rem;color:#e8eaed}
+
+.taskbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:.75rem;padding:.75rem 1rem;background:#141720;border:1px solid #252830;border-radius:10px}
+.taskbar-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.task-tabs{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.tab{padding:5px 12px;font-size:12px;font-weight:500;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#888;cursor:pointer;transition:all .15s}
+.tab:hover{background:#1a1d22;color:#ccc}
+.tab.active{background:#1a3a5c;color:#7ab8f5;border-color:#2456a4}
+.tab-del{padding:2px 6px;font-size:11px;border:none;background:transparent;color:#f07070;cursor:pointer;margin-left:2px;border-radius:4px;opacity:.5;transition:opacity .15s}
+.tab-del:hover{opacity:1}
+.tab-add{padding:5px 10px;font-size:12px;border:1px dashed #2a2d33;border-radius:6px;background:transparent;color:#555;cursor:pointer;transition:all .15s}
+.tab-add:hover{border-color:#555;color:#888}
+
+.toolbar{display:flex;gap:8px;margin-bottom:.75rem;align-items:center;flex-wrap:wrap}
+.btn{padding:7px 14px;font-size:13px;font-weight:500;border:1px solid #2a2d33;border-radius:8px;background:#1a1d22;color:#e8eaed;cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn:hover{background:#252830}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#1a3a5c;color:#7ab8f5;border-color:#2456a4}
+.btn-primary:hover{background:#1e4470}
+.btn-stop{background:#3a1a1a;color:#f07070;border-color:#6b2424}
+.btn-stop:hover{background:#4a2020}
+.file-label{padding:7px 14px;font-size:13px;font-weight:500;border:1px solid #2a2d33;border-radius:8px;background:#1a1d22;color:#aaa;cursor:pointer;white-space:nowrap}
+.file-label:hover{background:#252830}
+#file-input{display:none}
+.status{margin-left:auto;font-size:12px;padding:4px 10px;border-radius:6px;background:#1a1d22;border:1px solid #2a2d33;white-space:nowrap;color:#888}
+.status.ok{color:#5bc98a}.status.err{color:#f07070}.status.busy{color:#e6aa30}
+
+.execbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem 1rem;background:#141720;border:1px solid #252830;border-radius:10px}
+.execbar-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.exec-select{padding:6px 10px;font-size:13px;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#e8eaed;cursor:pointer}
+.repeat-input{width:68px;padding:6px 8px;font-size:13px;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#e8eaed;text-align:center;-moz-appearance:textfield}
+.repeat-input::-webkit-inner-spin-button,.repeat-input::-webkit-outer-spin-button{opacity:1}
+.progress-badge{font-size:12px;color:#e6aa30;padding:4px 10px;background:#1a1d22;border:1px solid #2a2d33;border-radius:6px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:#141720;border:1px solid #252830;border-radius:12px;padding:1rem 1.125rem;transition:border-color .15s}
+.card:hover{border-color:#333}
+.card.active-run{border-color:#e6aa30}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pos-id{font-size:11px;font-weight:600;color:#555;letter-spacing:.05em;text-transform:uppercase}
+.btn-del{padding:5px 10px;font-size:12px;border:1px solid #6b2424;border-radius:6px;background:#3a1a1a;color:#f07070;cursor:pointer;transition:background .15s}
+.btn-del:hover{background:#4a2020}
+
+.joints{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:#666;font-weight:500}
+.field input[type=number]{width:100%;padding:6px 8px;font-size:13px;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#e8eaed;text-align:center;-moz-appearance:textfield}
+.field input[type=number]::-webkit-inner-spin-button,.field input[type=number]::-webkit-outer-spin-button{opacity:1}
+.field input[type=number]:focus{outline:none;border-color:#2456a4}
+
+.gripper-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.gripper-label{font-size:11px;color:#666;font-weight:500;min-width:46px}
+.gbtn{padding:5px 12px;font-size:12px;font-weight:500;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#888;cursor:pointer;transition:all .15s}
+.gbtn:hover{background:#1a1d22}
+.gbtn.active-open{background:#1a3a28;color:#5bc98a;border-color:#2a6640}
+.gbtn.active-close{background:#3a2d10;color:#e6aa30;border-color:#6a520c}
+
+.delay-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.delay-label{font-size:11px;color:#666;font-weight:500;min-width:46px}
+.delay-inp{width:64px;padding:5px 8px;font-size:12px;border:1px solid #2a2d33;border-radius:6px;background:#0d0f12;color:#e8eaed;text-align:center;-moz-appearance:textfield}
+.delay-inp::-webkit-inner-spin-button,.delay-inp::-webkit-outer-spin-button{opacity:1}
+.delay-unit{font-size:11px;color:#555}
+
+.empty{text-align:center;padding:3rem 1rem;color:#444;font-size:14px}
+</style>
+</head>
+<body>
+
+<h1>Robot Position Manager</h1>
+
+<!-- TASK BAR -->
+<div class="taskbar">
+  <span class="taskbar-label">Task</span>
+  <div class="task-tabs" id="task-tabs"></div>
+  <button class="tab-add" onclick="addTask()">+ new</button>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="addPosition()">+ Add position</button>
+  <button class="btn" onclick="exportJSON()">Export JSON</button>
+  <label class="file-label" for="file-input">Import JSON</label>
+  <input type="file" id="file-input" accept=".json" multiple onchange="importJSON(event)">
+  <span class="status" id="status">Loading…</span>
+</div>
+
+<!-- EXEC BAR -->
+<div class="execbar">
+  <span class="execbar-label">Execute</span>
+  <select class="exec-select" id="exec-mode" onchange="onModeChange()">
+    <option value="once">Once</option>
+    <option value="repeat">Repeat</option>
+    <option value="loop">Loop</option>
+  </select>
+  <input class="repeat-input" type="number" id="repeat-count" value="3" min="1" style="display:none" title="Times">
+  <span id="repeat-label" style="font-size:12px;color:#666;display:none">times</span>
+  <button class="btn btn-primary" id="run-btn" onclick="runAll()">Run</button>
+  <button class="btn btn-stop" id="stop-btn" onclick="stopRun()" style="display:none">Stop</button>
+  <span class="progress-badge" id="progress" style="display:none"></span>
+</div>
+
+<!-- POSITION GRID -->
+<div class="grid" id="list"></div>
+
+<script>
+let positions = [];
+let currentTask = '';
+let tasks = [];
+let saveTimers = {};
+let stopFlag = false;
+let isBusy = false;
+let refreshTimer = null;
+
+/* ── TASK MANAGEMENT ── */
+
+async function loadTasks() {
+  try {
+    const res = await fetch('/tasks');
+    const data = await res.json();
+    tasks = (data.tasks && data.tasks.length) ? data.tasks : ['task1'];
+  } catch(e) {
+    tasks = ['task1'];
+  }
+  if (!currentTask || !tasks.includes(currentTask)) currentTask = tasks[0];
+  renderTabs();
+  await loadData(true);
+}
+
+function renderTabs() {
+  const el = document.getElementById('task-tabs');
+  el.innerHTML = tasks.map(t => `
+    <span style="display:inline-flex;align-items:center;gap:0">
+      <button class="tab${t===currentTask?' active':''}" onclick="switchTask('${t}')">${t}</button>${tasks.length>1?`<button class="tab-del" onclick="deleteTask('${t}')">x</button>`:''}
+    </span>
+  `).join('');
+}
+
+function switchTask(t) {
+  currentTask = t;
+  renderTabs();
+  loadData(true);
+}
+
+async function addTask() {
+  const name = prompt('Task name:');
+  if (!name || !name.trim()) return;
+  const t = name.trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  if (tasks.includes(t)) { switchTask(t); return; }
+  try {
+    await fetch('/tasks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:t})
+    });
+  } catch(e){}
+  tasks.push(t);
+  currentTask = t;
+  positions = [];
+  renderTabs();
+  render();
+  setStatus('Task created','ok');
+}
+
+async function deleteTask(t) {
+  if (!confirm(`Delete task "${t}" and all its positions?`)) return;
+  try { await fetch('/tasks/'+t,{method:'DELETE'}); } catch(e){}
+  tasks = tasks.filter(x=>x!==t);
+  if (!tasks.length) tasks=['task1'];
+  currentTask = tasks[0];
+  renderTabs();
+  await loadData(true);
+  setStatus('Task deleted','ok');
+}
+
+/* ── LOAD ── */
+
+async function loadData(showMsg) {
+  try {
+    const res = await fetch('/positions?task='+currentTask);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    positions = Object.entries(data.positions||{}).map(([id,v])=>({
+      id,
+      j1: toNum(v.joints?.joint1),
+      j2: toNum(v.joints?.joint2),
+      j3: toNum(v.joints?.joint3),
+      gripper: v.gripper||'open',
+    }));
+    render();
+    if (showMsg) setStatus('Synced','ok');
+  } catch(e){ setStatus('Offline','err'); }
+}
+
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(async()=>{
+    if (!isBusy) await loadData(false);
+    scheduleRefresh();
+  }, 5000);
+}
+
+/* ── ADD ── */
+
+async function addPosition() {
+  try {
+    const res = await fetch('/positions?task='+currentTask,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({joints:{joint1:0,joint2:0,joint3:0},gripper:'open'})
+    });
+    const d = await res.json();
+    positions.push({id:d.id,j1:0,j2:0,j3:0,gripper:'open',delay:1000});
+    render();
+    setStatus('Added','ok');
+  } catch(e){ setStatus('Add failed','err'); }
+}
+
+/* ── JOINT INPUT — debounced, NO re-render ── */
+
+function onJointInput(id, key, value) {
+  const p = positions.find(p=>p.id===id);
+  if (!p) return;
+  p[key] = toNum(value);
+  const tk = id+key;
+  clearTimeout(saveTimers[tk]);
+  saveTimers[tk] = setTimeout(()=>savePosition(p), 500);
+}
+
+/* ── GRIPPER — update DOM only, no re-render ── */
+
+function setGripper(id, state) {
+  const p = positions.find(p=>p.id===id);
+  if (!p) return;
+  p.gripper = state;
+  savePosition(p);
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (!card) return;
+  card.querySelectorAll('.gbtn').forEach(b=>{
+    const on = b.dataset.state===state;
+    b.className='gbtn'+(on?(state==='open'?' active-open':' active-close'):'');
+  });
+}
+
+/* ── SAVE ── */
+
+async function savePosition(p) {
+  try {
+    const res = await fetch('/positions/'+p.id+'?task='+currentTask,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        joints:{joint1:p.j1,joint2:p.j2,joint3:p.j3},
+        gripper:p.gripper,
+      })
+    });
+    if (!res.ok) throw new Error();
+    setStatus('Saved','ok');
+  } catch(e){ setStatus('Save error','err'); }
+}
+
+/* ── REMOVE ── */
+
+async function removePosition(id) {
+  positions = positions.filter(p=>p.id!==id);
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (card) card.remove();
+  if (!positions.length) render();
+  try {
+    await fetch('/positions/'+id+'?task='+currentTask,{method:'DELETE'});
+    setStatus('Deleted','ok');
+  } catch(e){}
+}
+
+/* ── EXECUTE ── */
+
+function onModeChange() {
+  const mode = document.getElementById('exec-mode').value;
+  const show = mode==='repeat';
+  document.getElementById('repeat-count').style.display = show?'block':'none';
+  document.getElementById('repeat-label').style.display = show?'inline':'none';
+}
+
+async function runAll() {
+  if (!positions.length){ setStatus('No positions','err'); return; }
+  stopFlag = false;
+  isBusy = true;
+  document.getElementById('run-btn').style.display='none';
+  document.getElementById('stop-btn').style.display='inline-block';
+  setStatus('Running…','busy');
+
+  const mode = document.getElementById('exec-mode').value;
+  const times = parseInt(document.getElementById('repeat-count').value)||1;
+
+  try {
+    if (mode==='once') {
+      await runSequence(1,1);
+    } else if (mode==='repeat') {
+      for (let i=0; i<times && !stopFlag; i++) await runSequence(i+1,times);
+    } else {
+      let cycle=0;
+      while (!stopFlag){ cycle++; setProgress(`Loop #${cycle}`); await runSequence(cycle,null); }
+    }
+    setStatus(stopFlag?'Stopped':'Done', stopFlag?'err':'ok');
+  } catch(e){ setStatus('Run failed','err'); }
+
+  setProgress('');
+  isBusy=false; stopFlag=false;
+  document.getElementById('run-btn').style.display='inline-block';
+  document.getElementById('stop-btn').style.display='none';
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active-run'));
+}
+
+async function runSequence(cycle, total) {
+  for (let i=0; i<positions.length; i++) {
+    if (stopFlag) return;
+    const p = positions[i];
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active-run'));
+    const card = document.querySelector(`.card[data-id="${p.id}"]`);
+    if (card) card.classList.add('active-run');
+    const cycleLabel = total ? `Cycle ${cycle}/${total} · ` : `Loop #${cycle} · `;
+    setProgress(`${cycleLabel}Step ${i+1}/${positions.length}`);
+    try {
+      await fetch('/stepper?num=1&angle='+p.j1,{method:'POST'});
+      await fetch('/stepper?num=2&angle='+p.j2,{method:'POST'});
+      await fetch('/stepper?num=3&angle='+p.j3,{method:'POST'});
+      await fetch('/gripper?state='+p.gripper,{method:'POST'});
+    } catch(e){}
+    await sleep(200)
+  }
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active-run'));
+}
+
+function stopRun(){ stopFlag=true; setStatus('Stopping…','busy'); }
+
+/* ── EXPORT ── */
+
+async function exportJSON() {
+  try {
+    const res = await fetch('/export?task='+currentTask);
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentTask+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    setStatus('Exported','ok');
+  } catch(e){ setStatus('Export failed','err'); }
+}
+
+/* ── IMPORT — multiple files supported ── */
+
+async function importJSON(e) {
+  const files = Array.from(e.target.files);
+  e.target.value='';
+  if (!files.length) return;
+  isBusy=true;
+  setStatus('Importing…','busy');
+
+  for (const file of files) {
+    let data;
+    try { data=JSON.parse(await file.text()); } catch{ continue; }
+    const incoming = data.positions||{};
+    const keys = Object.keys(incoming);
+    if (!keys.length) continue;
+
+    setProgress(`Clearing existing (${file.name})…`);
+    for (const p of [...positions]) {
+      try { await fetch('/positions/'+p.id+'?task='+currentTask,{method:'DELETE'}); } catch(e){}
+    }
+    positions=[];
+
+    for (let i=0; i<keys.length; i++) {
+      const v = incoming[keys[i]];
+      setProgress(`Uploading ${i+1}/${keys.length} — ${file.name}`);
+      try {
+        await fetch('/positions?task='+currentTask,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            joints:{
+              joint1:toNum(v.joints?.joint1),
+              joint2:toNum(v.joints?.joint2),
+              joint3:toNum(v.joints?.joint3)
+            },
+            gripper:v.gripper||'open',
+          })
+        });
+      } catch(e){}
+    }
+  }
+
+  setProgress('Verifying…');
+  try {
+    const res = await fetch('/positions?task='+currentTask);
+    const sd = await res.json();
+    positions = Object.entries(sd.positions||{}).map(([id,v])=>({
+      id,j1:toNum(v.joints?.joint1),j2:toNum(v.joints?.joint2),j3:toNum(v.joints?.joint3),
+      gripper:v.gripper||'open'
+    }));
+  } catch(e){}
+
+  render();
+  setProgress('');
+  setStatus(`Imported ${positions.length} position(s)`,'ok');
+  isBusy=false;
+}
+
+/* ── RENDER — full rebuild only on load/add/import ── */
+
+function render() {
+  const el = document.getElementById('list');
+  if (!positions.length) {
+    el.innerHTML='<div class="empty">No positions — click <strong>+ Add position</strong> to begin.</div>';
+    return;
+  }
+  el.innerHTML = positions.map(p=>`
+    <div class="card" data-id="${p.id}">
+      <div class="card-header">
+        <span class="pos-id">Position #${p.id}</span>
+        <button class="btn-del" onclick="removePosition('${p.id}')">Remove</button>
+      </div>
+      <div class="joints">
+        <div class="field"><label>Joint 1</label>
+          <input type="number" step="0.1" value="${p.j1}"
+            oninput="onJointInput('${p.id}','j1',this.value)">
+        </div>
+        <div class="field"><label>Joint 2</label>
+          <input type="number" step="0.1" value="${p.j2}"
+            oninput="onJointInput('${p.id}','j2',this.value)">
+        </div>
+        <div class="field"><label>Joint 3</label>
+          <input type="number" step="0.1" value="${p.j3}"
+            oninput="onJointInput('${p.id}','j3',this.value)">
+        </div>
+      </div>
+      <div class="gripper-row">
+        <span class="gripper-label">Gripper</span>
+        <button class="gbtn ${p.gripper==='open'?'active-open':''}" data-state="open"
+          onclick="setGripper('${p.id}','open')">Open</button>
+        <button class="gbtn ${p.gripper==='close'?'active-close':''}" data-state="close"
+          onclick="setGripper('${p.id}','close')">Close</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── HELPERS ── */
+
+function toNum(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function setStatus(text,type){
+  const el=document.getElementById('status');
+  el.textContent=text;
+  el.className='status'+(type?' '+type:'');
+}
+function setProgress(text){
+  const el=document.getElementById('progress');
+  el.textContent=text;
+  el.style.display=text?'inline-block':'none';
+}
+
+/* ── BOOT ── */
+loadTasks();
+scheduleRefresh();
+</script>
+</body>
+</html>
